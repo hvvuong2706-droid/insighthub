@@ -1,6 +1,7 @@
 """Small REST adapters share bounded timeouts and sanitized transport errors."""
 
 import logging
+
 import httpx
 
 from app.core.config import get_settings

@@ -7,7 +7,7 @@ from app.core.config import get_settings
 from app.core.errors import IndexIdentityConflict, SchemaMismatch
 
 
-def check_schema(conn):
+def check_schema(conn) -> None:
     try:
         row = conn.execute(
             "SELECT atttypmod FROM pg_attribute WHERE attrelid = to_regclass('chunks') "

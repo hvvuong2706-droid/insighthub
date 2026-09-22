@@ -1,8 +1,9 @@
 import unittest
 from unittest.mock import patch
 
-from support import configured, real_config
 from pydantic import ValidationError
+from support import configured, real_config
+
 from app.core.config import Settings
 from app.services.chunking import chunk_text
 

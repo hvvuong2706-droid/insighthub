@@ -4,13 +4,14 @@ from unittest.mock import patch
 
 import httpx
 from support import configured, real_config
+
 from app.core.errors import ProviderError
-from app.core.providers import post_json
 from app.core.metrics import (
-    embedding_tokens_total,
     embedding_estimated_tokens_total,
+    embedding_tokens_total,
     record_embedding_usage,
 )
+from app.core.providers import post_json
 from app.services.embeddings import embed, validate_vectors
 from app.services.llm import generate
 

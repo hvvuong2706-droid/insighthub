@@ -4,8 +4,8 @@ import logging
 import threading
 from contextlib import contextmanager
 
-from psycopg_pool import ConnectionPool
 from pgvector.psycopg import register_vector
+from psycopg_pool import ConnectionPool
 
 from app.core.config import get_settings
 

@@ -1,0 +1,30 @@
+[tool.ruff]
+target-version = "py312"
+# This codebase (untouched files included) was never wrapped at 88 — e.g.
+# SQL strings and Gemini URLs in ingestion.py/llm.py routinely run 90-110
+# chars. 120 covers the existing style without reformatting files outside
+# Day 1 scope just to satisfy a column limit nobody had adopted before.
+line-length = 120
+
+[tool.ruff.lint]
+# Day 1 introduces linting to a codebase that never had it. Deliberately
+# scoped to pycodestyle/pyflakes/isort/pyupgrade — safe, mechanical, no
+# architectural opinion. Left out: flake8-bugbear/blind-except/try-except/
+# simplify (B, BLE, TRY, SIM) and ruff-specific (RUF) rules, since several
+# of those flag *intentional* patterns in this codebase (e.g. errors.py's
+# documented "sanitize every exception into a fixed ServiceError" design
+# uses blind `except Exception` on purpose) and fixing them would mean
+# rewriting files outside Day 1's approved scope (api/app/core/db.py,
+# main.py, providers.py) for style reasons unrelated to the async refactor.
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+# `make typecheck` runs this against a curated list of Day 1's own new/rewritten
+# files, not the whole package (the rest of the codebase predates this Day 1
+# mypy setup and was never annotated — retrofitting it is out of scope; see
+# AGENTS.md Constraints). `follow_imports = silent` keeps strict enforcement on
+# the files actually passed on the command line while using (not re-reporting)
+# types inferred from whatever they import.
+follow_imports = "silent"
