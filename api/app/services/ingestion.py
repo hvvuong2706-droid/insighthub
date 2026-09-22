@@ -1,4 +1,4 @@
-"""Starter ingestion is synchronous. Day 1 students still implement the queue/worker."""
+"""process_document is shared: the API enqueues it, ingestion-worker runs it."""
 
 import hashlib
 import io
@@ -54,7 +54,7 @@ def extract_text(filename: str, content: bytes) -> str:
         raise InvalidDocument() from None
 
 
-def _pipeline_id() -> str:
+def compute_pipeline_id() -> str:
     settings = get_settings()
     return hashlib.sha256(
         json.dumps(
@@ -77,7 +77,7 @@ def process_document(document_id: int, filename: str, content: bytes) -> int:
     so a delayed failure cannot overwrite a later successful retry.
     """
     settings = get_settings()
-    digest, pipeline_id = hashlib.sha256(content).hexdigest(), _pipeline_id()
+    digest, pipeline_id = hashlib.sha256(content).hexdigest(), compute_pipeline_id()
     failure = None
     chunk_count = 0
     with get_conn() as conn:
@@ -162,8 +162,3 @@ def process_document(document_id: int, filename: str, content: bytes) -> int:
         )
         raise failure from None
     return chunk_count
-
-
-def ingest_document_sync(document_id: int, filename: str, content: bytes) -> int:
-    # Day 1: replace the caller with enqueueing, preserving process_document's contract.
-    return process_document(document_id, filename, content)

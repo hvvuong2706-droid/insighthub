@@ -10,11 +10,12 @@ class UploadLimitMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if (
-            scope["type"] != "http"
-            or scope["method"] != "POST"
-            or scope["path"].rstrip("/") != "/documents"
-        ):
+        path = scope["path"].rstrip("/")
+        # D8: retry re-uploads the original file, so it needs the same bound as /documents.
+        is_bounded_route = path == "/documents" or (
+            path.startswith("/documents/") and path.endswith("/retry")
+        )
+        if scope["type"] != "http" or scope["method"] != "POST" or not is_bounded_route:
             return await self.app(scope, receive, send)
         # Allow multipart headers/boundaries in addition to the actual file limit.
         limit = get_settings().max_upload_bytes + 64 * 1024
