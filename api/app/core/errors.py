@@ -6,7 +6,7 @@ class ServiceError(Exception):
     code = "internal_error"
     message = "Không thể xử lý yêu cầu."
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(self.message)
 
 
@@ -37,12 +37,16 @@ class DocumentConflict(ServiceError):
 class IndexIdentityConflict(ServiceError):
     status_code = 409
     code = "index_identity_conflict"
-    message = (
-        "Embedding identity không khớp index. Cần rebuild index bằng cấu hình đã chọn."
-    )
+    message = "Embedding identity không khớp index. Cần rebuild index bằng cấu hình đã chọn."
 
 
 class SchemaMismatch(ServiceError):
     status_code = 503
     code = "schema_mismatch"
     message = "Schema chưa sẵn sàng hoặc dimension không khớp EMBEDDING_DIM."
+
+
+class EnqueueFailed(ServiceError):
+    status_code = 503
+    code = "enqueue_failed"
+    message = "Không thể xếp hàng xử lý tài liệu. Vui lòng thử lại."
