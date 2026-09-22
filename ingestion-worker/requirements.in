@@ -1,0 +1,11 @@
+# Worker imports api/app unmodified (COPY at build time) so these mirror
+# api/requirements.in minus the HTTP-server-only deps (fastapi/uvicorn/
+# python-multipart), plus arq for the Redis queue. Pinned 2026-09-22.
+arq==0.28.0
+psycopg[binary,pool]==3.3.5
+pgvector==0.5.0
+pydantic==2.13.5
+pydantic-settings==2.15.0
+pypdf==6.18.0
+httpx==0.28.1
+prometheus-client==0.26.0

@@ -1,0 +1,26 @@
+# Root context is only needed because ingestion-worker's build COPYs api/app.
+# Keep every other top-level dir out of the build context.
+.git/
+.claude/
+specs/
+web/
+chatops-bot/
+infra/
+observability/
+security/
+tools/
+docs/
+sample-docs/
+scripts/
+tests/
+evidence/
+ai-prompts/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.env
+*.log
+api/tests/

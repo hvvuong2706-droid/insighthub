@@ -1,7 +1,0 @@
-# Thư mục worker/ — học viên sẽ tạo file ở đây trong Day 1 refactor.
-# Xem README.md ở thư mục cha để biết yêu cầu.
-#
-# Gợi ý file cần tạo:
-#   worker/__init__.py
-#   worker/settings.py   -> ARQ WorkerSettings (redis_settings, functions, max_jobs)
-#   worker/tasks.py      -> async def ingest_document(ctx, document_id, filename, content)
