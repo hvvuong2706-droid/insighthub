@@ -9,6 +9,7 @@ from fastapi import HTTPException, UploadFile
 from fastapi.testclient import TestClient
 from pypdf import PdfWriter
 from support import configured
+
 from app.core.errors import InvalidDocument, ProviderError
 from app.core.metrics import http_requests_total
 from app.core.upload_limit import UploadLimitMiddleware
@@ -46,9 +47,7 @@ class HttpTests(unittest.TestCase):
 
     def test_empty_upload_returns_422(self):
         with patch("app.routers.documents.get_conn") as connection:
-            response = TestClient(app).post(
-                "/documents", files={"file": ("empty.txt", b"")}
-            )
+            response = TestClient(app).post("/documents", files={"file": ("empty.txt", b"")})
         self.assertEqual(response.status_code, 422)
         connection.assert_not_called()
 
@@ -94,17 +93,11 @@ class HttpTests(unittest.TestCase):
             get_conn.return_value.__enter__.return_value.execute.return_value.fetchone.return_value = None
             for i in range(20):
                 client.delete(f"/documents/{1000 + i}")
-        labels = [
-            sample.labels
-            for metric in http_requests_total.collect()
-            for sample in metric.samples
-        ]
+        labels = [sample.labels for metric in http_requests_total.collect() for sample in metric.samples]
         endpoints = {label["endpoint"] for label in labels}
         self.assertIn("__unmatched__", endpoints)
         self.assertIn("/documents/{document_id}", endpoints)
-        self.assertFalse(
-            any("unknown-" in value or "/documents/10" in value for value in endpoints)
-        )
+        self.assertFalse(any("unknown-" in value or "/documents/10" in value for value in endpoints))
         self.assertFalse(any(label["method"].startswith("UNKNOWN") for label in labels))
 
 
@@ -118,12 +111,8 @@ class AsyncHttpTests(unittest.IsolatedAsyncioTestCase):
             return []
 
         with patch("app.routers.chat.retrieve", side_effect=blocked):
-            async with httpx.AsyncClient(
-                transport=httpx.ASGITransport(app=app), base_url="http://test"
-            ) as client:
-                task = asyncio.create_task(
-                    client.post("/chat", json={"question": "question"})
-                )
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+                task = asyncio.create_task(client.post("/chat", json={"question": "question"}))
                 try:
                     self.assertTrue(await asyncio.to_thread(started.wait, 1))
                     response = await asyncio.wait_for(client.get("/healthz"), timeout=1)
@@ -160,3 +149,50 @@ class AsyncHttpTests(unittest.IsolatedAsyncioTestCase):
             )
         self.assertEqual(called, [])
         self.assertEqual(sent[0]["status"], 413)
+
+    async def test_retry_path_is_bounded_same_as_upload(self):
+        # D8: /documents/{id}/retry re-uploads the file, so it needs the same 413 guard.
+        called, sent = [], []
+
+        async def inner(scope, receive, send):
+            called.append(True)
+
+        async def receive():
+            raise AssertionError("body must not be read once Content-Length exceeds the limit")
+
+        async def send(message):
+            sent.append(message)
+
+        with configured(max_upload_bytes=4):
+            await UploadLimitMiddleware(inner)(
+                {
+                    "type": "http",
+                    "method": "POST",
+                    "path": "/documents/42/retry",
+                    "headers": [(b"content-length", b"999999")],
+                },
+                receive,
+                send,
+            )
+        self.assertEqual(called, [])
+        self.assertEqual(sent[0]["status"], 413)
+
+    async def test_get_documents_path_is_not_bounded_by_upload_limit(self):
+        # Middleware must only intercept POST to /documents or /documents/{id}/retry.
+        called = []
+
+        async def inner(scope, receive, send):
+            called.append(True)
+
+        async def receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        async def send(message):
+            pass
+
+        await UploadLimitMiddleware(inner)(
+            {"type": "http", "method": "GET", "path": "/documents", "headers": []},
+            receive,
+            send,
+        )
+        self.assertEqual(called, [True])
